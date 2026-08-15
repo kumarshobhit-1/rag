@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag_fastapi_backend
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - CHROMA_PERSIST_DIR=/app/chroma-db
+    env_file:
+      - .env
+    volumes:
+      - chroma_data:/app/chroma-db
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag_streamlit_ui
+    command: streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - CHROMA_PERSIST_DIR=/app/chroma-db
+    env_file:
+      - .env
+    volumes:
+      - chroma_data:/app/chroma-db
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+    driver: local
